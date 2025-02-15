@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import { Line } from 'react-chartjs-2';
 import styled from 'styled-components';
 import {
@@ -11,7 +12,6 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { useSelector } from 'react-redux';
 
 ChartJS.register(
   CategoryScale,
@@ -65,16 +65,14 @@ const StatLabel = styled.div`
 
 export default function Analytics() {
   const sessions = useSelector(state => state.timer?.sessions || []);
-  
-  // Calculate stats
-  const totalHours = sessions.reduce((acc, session) => acc + session.duration / 3600, 0);
-  const averageSessionLength = sessions.length > 0 
-    ? totalHours / sessions.length 
-    : 0;
-  const totalSessions = sessions.length;
+
+  // Memoize selectors
+  const totalHours = useMemo(() => sessions.reduce((acc, session) => acc + session.duration / 3600, 0), [sessions]);
+  const averageSessionLength = useMemo(() => sessions.length > 0 ? totalHours / sessions.length : 0, [sessions, totalHours]);
+  const totalSessions = useMemo(() => sessions.length, [sessions]);
 
   // Prepare chart data
-  const data = {
+  const data = useMemo(() => ({
     labels: sessions.map(s => new Date(s.startTime).toLocaleDateString()),
     datasets: [{
       label: 'Study Hours',
@@ -83,7 +81,7 @@ export default function Analytics() {
       backgroundColor: 'rgba(52, 152, 219, 0.1)',
       tension: 0.4
     }]
-  };
+  }), [sessions]);
 
   const options = {
     responsive: true,
